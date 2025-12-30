@@ -2,12 +2,14 @@ import { createConfig, http } from 'wagmi';
 import { base, baseSepolia, hardhat } from 'wagmi/chains';
 import { getDefaultConfig } from 'connectkit';
 
-// WalletConnect project ID - get from https://cloud.walletconnect.com
+// WalletConnect project ID - only needed for mobile wallet QR code connections
+// Get from https://cloud.walletconnect.com (free)
+// Leave empty to only support browser extension wallets (MetaMask, Coinbase, etc.)
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '';
 
 export const config = createConfig(
   getDefaultConfig({
-    // Required configuration
+    // Supported chains
     chains: [base, baseSepolia, hardhat],
     transports: {
       [base.id]: http(),
@@ -15,7 +17,8 @@ export const config = createConfig(
       [hardhat.id]: http('http://127.0.0.1:8545'),
     },
 
-    // Required API keys
+    // WalletConnect project ID (optional - only for mobile wallet connections)
+    // Browser extension wallets (MetaMask, Coinbase Wallet, etc.) work without this
     walletConnectProjectId,
 
     // App info

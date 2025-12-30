@@ -1,0 +1,20 @@
+{
+  "frame": {
+    "version": "1",
+    "name": "Infinite Frontier",
+    "subtitle": "AI-Powered NFT Generation",
+    "description": "Generate unique AI images and mint them as onchain NFTs on Base",
+    "iconUrl": "https://infinite-frontier.xyz/icon.png",
+    "homeUrl": "https://infinite-frontier.xyz",
+    "splashImageUrl": "https://infinite-frontier.xyz/splash.png",
+    "splashBackgroundColor": "#0a0a0f",
+    "heroImageUrl": "https://infinite-frontier.xyz/hero.png",
+    "tagline": "Infinite possibilities, one frontier at a time",
+    "screenshotUrls": [
+      "https://infinite-frontier.xyz/screenshot1.png"
+    ],
+    "primaryCategory": "games",
+    "tags": ["nft", "ai", "generation", "onchain", "base"],
+    "webhookUrl": "https://infinite-frontier.xyz/api/webhook"
+  }
+}

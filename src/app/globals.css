@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground: #ededed;
+  --background: #0a0a0f;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.7);
+}
+
+/* Gradient backgrounds */
+.gradient-border {
+  position: relative;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+  border-radius: 12px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.5), rgba(139, 92, 246, 0.5));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg;
+  @apply hover:from-indigo-600 hover:to-purple-700 transition-all duration-200;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply shadow-lg shadow-indigo-500/25;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-white/10 text-white font-semibold rounded-lg border border-white/20;
+  @apply hover:bg-white/20 transition-all duration-200;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Card styles */
+.card {
+  @apply bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-6;
+}
+
+/* Input styles */
+.input {
+  @apply w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg;
+  @apply text-white placeholder-white/40;
+  @apply focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500;
+  @apply transition-all duration-200;
+}
+
+/* Animation classes */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Loading spinner */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Image container */
+.image-container {
+  @apply relative overflow-hidden rounded-lg;
+  @apply bg-gradient-to-br from-indigo-500/10 to-purple-500/10;
+}
+
+.image-container::before {
+  content: '';
+  display: block;
+  padding-top: 100%;
+}
+
+.image-container img {
+  @apply absolute inset-0 w-full h-full object-cover;
+}
+
+/* Glow effect */
+.glow {
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 60px rgba(99, 102, 241, 0.5);
+}

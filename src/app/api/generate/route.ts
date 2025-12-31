@@ -27,13 +27,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate image using Venice AI at minimum size (256x256)
+    // Note: Only send OpenAI-compatible params (steps/cfg_scale may cause 400 errors)
     const result = await generateImage(
       {
         prompt,
         width: VENICE_MIN_SIZE,
         height: VENICE_MIN_SIZE,
-        steps: 20,
-        cfg_scale: 7,
       },
       apiKey
     );

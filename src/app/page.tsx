@@ -102,7 +102,7 @@ export default function Home() {
             Create Unique AI Art
           </h2>
           <p className="text-lg text-white/60 max-w-2xl mx-auto">
-            Transform your imagination into onchain NFTs. Generate stunning AI images and mint them directly on Base.
+            Transform your imagination into onchain NFTs.
           </p>
         </div>
 
@@ -208,7 +208,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-white/10 mt-12">
         <div className="container mx-auto px-4 py-8 text-center text-white/40 text-sm">
-          <p>Built on Base • Powered by Venice AI</p>
+          <p>Built on Base • Powered by <a href="https://venice.ai/chat" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">Venice AI</a></p>
         </div>
       </footer>
     </main>

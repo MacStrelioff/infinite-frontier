@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import sdk, { type Context } from '@farcaster/frame-sdk';
 
+type MiniAppContext = Context.MiniAppContext;
+
 interface FrameContextState {
   /** Whether we're running inside a Farcaster frame (Base app/Warpcast) */
   isInFrame: boolean;
@@ -15,7 +17,7 @@ interface FrameContextState {
   /** The user's Farcaster username */
   username: string | undefined;
   /** The full frame context */
-  context: Context.FrameContext | undefined;
+  context: MiniAppContext | undefined;
   /** Send a transaction using the frame SDK */
   sendFrameTransaction: (params: {
     to: `0x${string}`;
@@ -33,19 +35,33 @@ interface FrameContextState {
  */
 export function useFrameContext(): FrameContextState {
   const [isLoading, setIsLoading] = useState(true);
-  const [context, setContext] = useState<Context.FrameContext | undefined>(undefined);
+  const [context, setContext] = useState<MiniAppContext | undefined>(undefined);
   const [isInFrame, setIsInFrame] = useState(false);
+  const [frameAddress, setFrameAddress] = useState<`0x${string}` | undefined>(undefined);
 
   useEffect(() => {
     const initFrame = async () => {
       try {
-        // Try to get the frame context
-        const frameContext = await sdk.context;
+        // Check if we're in a mini app
+        const inMiniApp = await sdk.isInMiniApp();
         
-        if (frameContext) {
+        if (inMiniApp) {
+          // Get the frame context
+          const frameContext = await sdk.context;
           setContext(frameContext);
           setIsInFrame(true);
           console.log('Running in Farcaster frame:', frameContext);
+          
+          // Try to get the wallet address from the provider
+          try {
+            const provider = sdk.wallet.ethProvider;
+            const accounts = await provider.request({ method: 'eth_accounts' }) as string[];
+            if (accounts && accounts.length > 0) {
+              setFrameAddress(accounts[0] as `0x${string}`);
+            }
+          } catch (walletError) {
+            console.log('Could not get wallet address:', walletError);
+          }
         } else {
           console.log('Not running in a Farcaster frame');
           setIsInFrame(false);
@@ -78,18 +94,29 @@ export function useFrameContext(): FrameContextState {
     }
 
     try {
-      const result = await sdk.wallet.ethSendTransaction({
+      const provider = sdk.wallet.ethProvider;
+      
+      // Build the transaction request
+      const txParams: {
+        to: `0x${string}`;
+        value?: `0x${string}`;
+        data?: `0x${string}`;
+      } = {
         to: params.to,
-        value: params.value?.toString(16) ? `0x${params.value.toString(16)}` : undefined,
         data: params.data,
-        chainId: params.chainId ? `eip155:${params.chainId}` : undefined,
-      });
-
-      if ('transactionHash' in result) {
-        return result.transactionHash;
+      };
+      
+      if (params.value) {
+        txParams.value = `0x${params.value.toString(16)}` as `0x${string}`;
       }
       
-      throw new Error('Transaction failed');
+      // Use eth_sendTransaction via the provider
+      const txHash = await provider.request({
+        method: 'eth_sendTransaction',
+        params: [txParams],
+      }) as string;
+      
+      return txHash;
     } catch (error) {
       console.error('Frame transaction error:', error);
       throw error;
@@ -99,7 +126,7 @@ export function useFrameContext(): FrameContextState {
   return {
     isInFrame,
     isLoading,
-    frameAddress: context?.user?.connectedAddresses?.[0] as `0x${string}` | undefined,
+    frameAddress,
     fid: context?.user?.fid,
     username: context?.user?.username,
     context,

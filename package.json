@@ -11,7 +11,8 @@
     "test": "npm run test:contracts && npm run test:api",
     "test:contracts": "hardhat test",
     "test:api": "vitest run tests/api",
-    "test:api:watch": "vitest tests/api"
+    "test:api:watch": "vitest tests/api",
+    "test:api:integration": "vitest run tests/api/venice.integration.test.ts"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.1.0",

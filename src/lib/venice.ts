@@ -49,17 +49,39 @@ export async function generateImage(
 ): Promise<VeniceImageGenerationResponse> {
   const url = 'https://api.venice.ai/api/v1/images/generations';
 
-  const body = {
+  // Venice API is OpenAI-compatible, so we use OpenAI's format
+  // Convert width/height to size string (e.g., "256x256")
+  const size = request.width && request.height 
+    ? `${request.width}x${request.height}`
+    : `${ONCHAIN_IMAGE_SIZE}x${ONCHAIN_IMAGE_SIZE}`;
+
+  const body: Record<string, any> = {
     model: request.model || DEFAULT_IMAGE_MODEL,
     prompt: request.prompt,
-    width: request.width || ONCHAIN_IMAGE_SIZE,
-    height: request.height || ONCHAIN_IMAGE_SIZE,
-    steps: request.steps || 20,
-    cfg_scale: request.cfg_scale || 7,
-    seed: request.seed,
-    negative_prompt: request.negative_prompt || 'blurry, low quality, distorted',
+    size: size,
+    n: 1, // Number of images to generate
     response_format: 'b64_json',
   };
+
+  // Venice may support some extended parameters, but only include them if provided
+  // and only if they're likely to be supported (OpenAI doesn't support these)
+  // Note: These may cause 400 errors if Venice doesn't support them
+  if (request.seed !== undefined && request.seed !== null) {
+    body.seed = request.seed;
+  }
+  
+  // Steps, cfg_scale, and negative_prompt are not part of OpenAI format
+  // Venice might support them, but they may cause errors
+  // Only include if explicitly provided
+  if (request.steps !== undefined && request.steps !== null) {
+    body.steps = request.steps;
+  }
+  if (request.cfg_scale !== undefined && request.cfg_scale !== null) {
+    body.cfg_scale = request.cfg_scale;
+  }
+  if (request.negative_prompt !== undefined && request.negative_prompt !== null) {
+    body.negative_prompt = request.negative_prompt;
+  }
 
   const response = await fetch(url, {
     method: 'POST',
@@ -71,22 +93,44 @@ export async function generateImage(
   });
 
   if (!response.ok) {
-    const errorData = await response.json() as VeniceError;
-    throw new VeniceAPIError(
-      errorData.error?.message || `API request failed with status ${response.status}`,
-      response.status,
-      errorData.error?.code || 'UNKNOWN_ERROR'
-    );
+    let errorMessage = `API request failed with status ${response.status}`;
+    let errorCode = 'UNKNOWN_ERROR';
+    
+    try {
+      const errorData = await response.json() as any;
+      // Handle OpenAI-style errors
+      if (errorData.error) {
+        errorMessage = errorData.error.message || errorMessage;
+        errorCode = errorData.error.code || errorData.error.type || errorCode;
+      } else if (errorData.message) {
+        errorMessage = errorData.message;
+      }
+    } catch {
+      // If response is not JSON, try to get text
+      try {
+        const text = await response.text();
+        errorMessage = text || errorMessage;
+      } catch {
+        // Keep default error message
+      }
+    }
+    
+    throw new VeniceAPIError(errorMessage, response.status, errorCode);
   }
 
   const data = await response.json();
   
+  // OpenAI/Venice format: data is an array of objects with b64_json or url
   // Transform the response to our expected format
+  const images = Array.isArray(data.data) 
+    ? data.data.map((item: { b64_json?: string; url?: string }) => ({
+        base64: item.b64_json || '',
+        url: item.url,
+      }))
+    : [];
+
   return {
-    images: data.data?.map((item: { b64_json?: string; url?: string }) => ({
-      base64: item.b64_json || '',
-      url: item.url,
-    })) || [],
+    images: images,
     model: body.model,
     seed: data.seed || request.seed || 0,
   };
@@ -171,7 +215,27 @@ export async function getAvailableModels(apiKey: string): Promise<string[]> {
   }
 
   const data = await response.json();
-  return data.data
-    ?.filter((model: { type?: string }) => model.type === 'image')
-    ?.map((model: { id: string }) => model.id) || [];
+  
+  // Handle different possible response formats
+  // OpenAI format: { data: [...] }
+  // Venice might return: { data: [...] } or just [...]
+  const models = Array.isArray(data) ? data : (data.data || []);
+  
+  // Filter for image models - check various possible fields
+  return models
+    .filter((model: any) => {
+      // Check if model has image-related type or capabilities
+      const type = model.type || model.object || '';
+      const id = (model.id || model.name || '').toLowerCase();
+      
+      // Include if explicitly marked as image type, or if id suggests image model
+      return type === 'image' || 
+             type === 'image-generation' ||
+             id.includes('image') ||
+             id.includes('dall') ||
+             id.includes('fluently') ||
+             id.includes('sd-');
+    })
+    .map((model: any) => model.id || model.name || '')
+    .filter((id: string) => id.length > 0);
 }

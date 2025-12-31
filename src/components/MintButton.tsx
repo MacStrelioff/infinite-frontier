@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, usePublicClient } from 'wagmi';
-import { formatEther, decodeEventLog } from 'viem';
+import { formatEther, decodeEventLog, encodeFunctionData } from 'viem';
 import { INFINITE_FRONTIER_ABI, CONTRACT_ADDRESSES, type SupportedChainId } from '@/lib/contracts';
 
 interface MintButtonProps {
@@ -13,6 +13,15 @@ interface MintButtonProps {
   chainId: SupportedChainId;
   onSuccess: (tokenId: number, txHash?: string) => void;
   onMinting: () => void;
+  /** Whether running in a Farcaster frame (Base app/Warpcast) */
+  isInFrame?: boolean;
+  /** Function to send transaction via Frame SDK */
+  sendFrameTransaction?: (params: {
+    to: `0x${string}`;
+    value?: bigint;
+    data?: `0x${string}`;
+    chainId?: number;
+  }) => Promise<string>;
 }
 
 export function MintButton({
@@ -23,18 +32,22 @@ export function MintButton({
   chainId,
   onSuccess,
   onMinting,
+  isInFrame = false,
+  sendFrameTransaction,
 }: MintButtonProps) {
   const [isMinting, setIsMinting] = useState(false);
+  const [frameError, setFrameError] = useState<string | null>(null);
   const publicClient = usePublicClient();
   const contractAddress = CONTRACT_ADDRESSES[chainId]?.infiniteFrontier;
 
+  // Wagmi hooks for regular browser transactions
   const { writeContract, data: txHash, isPending, error } = useWriteContract();
 
   const { isLoading: isConfirming, isSuccess: isConfirmed, data: receipt } = useWaitForTransactionReceipt({
     hash: txHash,
   });
 
-  // Handle mint transaction
+  // Handle mint transaction - Frame SDK or Wagmi
   const handleMint = async () => {
     if (!contractAddress) {
       console.error('Contract address not configured');
@@ -42,20 +55,91 @@ export function MintButton({
     }
 
     setIsMinting(true);
+    setFrameError(null);
     onMinting();
 
-    writeContract({
-      address: contractAddress,
-      abi: INFINITE_FRONTIER_ABI,
-      functionName: 'mint',
-      args: [prompt, imageBase64, aiModel],
-      value: mintFee,
-    });
+    // Use Frame SDK if in frame, otherwise use Wagmi
+    if (isInFrame && sendFrameTransaction) {
+      try {
+        // Encode the mint function call
+        const data = encodeFunctionData({
+          abi: INFINITE_FRONTIER_ABI,
+          functionName: 'mint',
+          args: [prompt, imageBase64, aiModel],
+        });
+
+        console.log('Sending frame transaction...');
+        const frameTxHash = await sendFrameTransaction({
+          to: contractAddress,
+          value: mintFee,
+          data: data as `0x${string}`,
+          chainId: chainId,
+        });
+
+        console.log('Frame transaction sent:', frameTxHash);
+        
+        // Wait for confirmation using public client
+        if (publicClient) {
+          const txReceipt = await publicClient.waitForTransactionReceipt({
+            hash: frameTxHash as `0x${string}`,
+          });
+
+          // Try to decode the token ID from the logs
+          const mintEvent = txReceipt.logs.find((log) => {
+            try {
+              const decoded = decodeEventLog({
+                abi: INFINITE_FRONTIER_ABI,
+                data: log.data,
+                topics: log.topics,
+              });
+              return decoded.eventName === 'NFTMinted';
+            } catch {
+              return false;
+            }
+          });
+
+          if (mintEvent) {
+            const decoded = decodeEventLog({
+              abi: INFINITE_FRONTIER_ABI,
+              data: mintEvent.data,
+              topics: mintEvent.topics,
+            });
+            if (decoded.eventName === 'NFTMinted' && decoded.args) {
+              const tokenId = Number((decoded.args as { tokenId: bigint }).tokenId);
+              onSuccess(tokenId, frameTxHash);
+              setIsMinting(false);
+              return;
+            }
+          }
+          
+          // Fallback if we can't decode
+          onSuccess(0, frameTxHash);
+        } else {
+          // No public client, just return success with hash
+          onSuccess(0, frameTxHash);
+        }
+        
+        setIsMinting(false);
+      } catch (err) {
+        console.error('Frame mint error:', err);
+        setFrameError(err instanceof Error ? err.message : 'Transaction failed');
+        setIsMinting(false);
+      }
+    } else {
+      // Regular Wagmi transaction
+      writeContract({
+        address: contractAddress,
+        abi: INFINITE_FRONTIER_ABI,
+        functionName: 'mint',
+        args: [prompt, imageBase64, aiModel],
+        value: mintFee,
+      });
+    }
   };
 
-  // Handle successful mint
+  // Handle successful mint (Wagmi only - frame handled in handleMint)
   useEffect(() => {
-    if (isConfirmed && receipt) {
+    if (isConfirmed && receipt && !isInFrame) {
       // Find the NFTMinted event in the logs
       const mintEvent = receipt.logs.find((log) => {
         try {
@@ -94,17 +178,18 @@ export function MintButton({
       
       setIsMinting(false);
     }
-  }, [isConfirmed, receipt, onSuccess]);
+  }, [isConfirmed, receipt, onSuccess, isInFrame, txHash]);
 
-  // Handle errors
+  // Handle errors (Wagmi)
   useEffect(() => {
-    if (error) {
+    if (error && !isInFrame) {
       console.error('Mint error:', error);
       setIsMinting(false);
     }
-  }, [error]);
+  }, [error, isInFrame]);
 
   const isLoading = isPending || isConfirming || isMinting;
+  const displayError = isInFrame ? frameError : error?.message;
 
   return (
     <div className="flex-1">
@@ -116,7 +201,7 @@ export function MintButton({
         {isLoading ? (
           <>
             <div className="spinner" />
-            <span>{isConfirming ? 'Confirming...' : 'Minting...'}</span>
+            <span>{isConfirming || (isInFrame && isMinting) ? 'Confirming...' : 'Minting...'}</span>
           </>
         ) : (
           <>
@@ -128,9 +213,9 @@ export function MintButton({
         )}
       </button>
       
-      {error && (
+      {displayError && (
         <p className="text-red-400 text-sm mt-2">
-          {error.message.includes('User rejected') 
+          {displayError.includes('User rejected') || displayError.includes('rejected')
             ? 'Transaction cancelled' 
             : 'Failed to mint. Please try again.'}
         </p>

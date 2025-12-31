@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import { ConnectKitButton } from 'connectkit';
 import { formatEther } from 'viem';
@@ -9,6 +9,7 @@ import { GeneratedImage } from '@/components/GeneratedImage';
 import { MintButton } from '@/components/MintButton';
 import { NFTGallery } from '@/components/NFTGallery';
 import { useInfiniteFrontier } from '@/hooks/useInfiniteFrontier';
+import { useFrameContext } from '@/hooks/useFrameContext';
 import type { SupportedChainId } from '@/lib/contracts';
 
 type AppState = 'idle' | 'generating' | 'generated' | 'minting' | 'minted';
@@ -20,8 +21,26 @@ interface GeneratedImageData {
 }
 
 export default function Home() {
-  const { address, isConnected } = useAccount();
-  const chainId = useChainId() as SupportedChainId;
+  // Wagmi hooks (for regular browser)
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const wagmiChainId = useChainId() as SupportedChainId;
+  
+  // Frame SDK hooks (for Base app/Warpcast)
+  const { 
+    isInFrame, 
+    isLoading: frameLoading, 
+    frameAddress, 
+    username,
+    ready: signalReady,
+    sendFrameTransaction,
+  } = useFrameContext();
+
+  // Use frame address if in frame, otherwise wagmi
+  const address = isInFrame ? frameAddress : wagmiAddress;
+  const isConnected = isInFrame ? !!frameAddress : wagmiConnected;
+  // Default to Base mainnet (8453) when in frame
+  const chainId: SupportedChainId = isInFrame ? 8453 : wagmiChainId;
+
   const [appState, setAppState] = useState<AppState>('idle');
   const [generatedImage, setGeneratedImage] = useState<GeneratedImageData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +54,13 @@ export default function Home() {
     currentGeneration,
     refetchSupply,
   } = useInfiniteFrontier(chainId);
+
+  // Signal ready to frame when loaded
+  useEffect(() => {
+    if (!frameLoading && isInFrame) {
+      signalReady();
+    }
+  }, [frameLoading, isInFrame, signalReady]);
 
   const handleGenerate = useCallback(async (prompt: string) => {
     setError(null);
@@ -80,6 +106,18 @@ export default function Home() {
     setAppState('idle');
   }, []);
 
+  // Show loading while checking frame context
+  if (frameLoading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="spinner mb-4 mx-auto" />
+          <p className="text-white/60">Loading...</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen">
       {/* Header */}
@@ -94,7 +132,15 @@ export default function Home() {
               <p className="text-xs text-white/50">{currentGeneration} • {totalSupply} minted</p>
             </div>
           </div>
-          <ConnectKitButton />
+          {/* Show username if in frame, otherwise show ConnectKit button */}
+          {isInFrame ? (
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-green-400" />
+              <span className="text-sm">{username || address?.slice(0, 6) + '...' + address?.slice(-4)}</span>
+            </div>
+          ) : (
+            <ConnectKitButton />
+          )}
         </div>
       </header>
 
@@ -107,6 +153,11 @@ export default function Home() {
           <p className="text-lg text-white/60 max-w-2xl mx-auto">
             Transform your imagination into onchain NFTs.
           </p>
+          {isInFrame && (
+            <p className="text-sm text-purple-400 mt-2">
+              ✨ Running in {username ? 'Farcaster' : 'Base App'} - wallet auto-connected!
+            </p>
+          )}
         </div>
 
         {/* Main Content */}
@@ -154,6 +205,8 @@ export default function Home() {
                   chainId={chainId}
                   onSuccess={handleMintSuccess}
                   onMinting={() => setAppState('minting')}
+                  isInFrame={isInFrame}
+                  sendFrameTransaction={sendFrameTransaction}
                 />
               </div>
             </div>

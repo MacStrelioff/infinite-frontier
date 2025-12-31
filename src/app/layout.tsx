@@ -14,6 +14,9 @@ export const metadata: Metadata = {
     description: 'AI-Powered NFT Generation on Base',
     type: 'website',
   },
+  other: {
+    'base:app_id': '6954a57c4d3a403912ed8713',
+  },
 };
 
 export default function RootLayout({

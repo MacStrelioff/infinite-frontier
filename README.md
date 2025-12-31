@@ -1,6 +1,18 @@
 # Infinite Frontier
 
-A miniapp where users generate AI images and can mint them as fully onchain NFTs on Base.
+A Farcaster miniapp where users generate AI images and mint them as fully onchain NFTs on Base.
+
+## Quick Links
+
+| Resource | Link |
+|----------|------|
+| 🌐 **Live App** | [infinite-frontier.vercel.app](https://infinite-frontier.vercel.app) |
+| 📱 **Farcaster Manifest** | [farcaster.json](https://infinite-frontier.vercel.app/.well-known/farcaster.json) |
+| 📄 **Contract (Base Mainnet)** | [0xbe253c50AD7491E072AbC5Caf9b0dA13755dbD04](https://basescan.org/address/0xbe253c50AD7491E072AbC5Caf9b0dA13755dbD04) |
+| 🖼️ **OpenSea Collection** | [View on OpenSea](https://opensea.io/collection/infinite-frontier) |
+| 🧪 **Testnet Contract** | [0x2d3d42AC1f579F156816405460b7fEf6da925B1d](https://sepolia.basescan.org/address/0x2d3d42AC1f579F156816405460b7fEf6da925B1d) |
+
+---
 
 ## Core Concept
 
@@ -8,328 +20,36 @@ A miniapp where users generate AI images and can mint them as fully onchain NFTs
 - **Mint**: Users can mint the image as an onchain NFT (mint fee)
 - **Trade**: NFTs appear automatically on OpenSea for trading
 
-## Current Status
+---
+
+## Status
 
 ### ✅ Completed
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| Smart Contract | ✅ Done | ERC-721 with onchain metadata & image storage |
+| Smart Contract | ✅ Deployed | ERC-721 with onchain metadata & image storage |
 | Venice AI Integration | ✅ Done | Image generation with 128x128 JPEG compression |
-| Website/UI | ✅ Done | Next.js app with wallet connect, generation, minting |
-| API Routes | ✅ Done | `/api/generate` with image compression |
-| OpenSea Integration | ✅ Done | SDK integration for bids/listings |
-| Test Suite | ✅ Done | 83 tests passing (see below) |
+| Website/UI | ✅ Live | Next.js app deployed to Vercel |
+| Farcaster Manifest | ✅ Signed | Works in Base app & Warpcast |
+| Wallet Connection | ✅ Done | Auto-connects in frames, ConnectKit for browsers |
+| OpenSea Integration | ✅ Done | Auto-detection + SDK for bids/listings |
+| Test Suite | ✅ Passing | 83 tests (contracts, API, integration) |
 
-### ⬜ Remaining Steps to Launch
+### 🚀 Next Steps (Enhancements)
 
-| Step | Task | Time Est. |
-|------|------|-----------|
-| 1 | Get API keys (Venice, WalletConnect, Basescan) | 30 min |
-| 2 | Deploy contract to Base Sepolia (testnet) | 15 min |
-| 3 | Test locally with testnet contract | 30 min |
-| 4 | Deploy website to Vercel | 15 min |
-| 5 | Generate Farcaster manifest via Base.dev | 15 min |
-| 6 | Deploy contract to Base mainnet | 15 min |
-| **Total** | | **~2 hours** |
-
----
-
-## Test Results
-
-All tests pass, confirming the core functionality works:
-
-```
-Contract Tests:     31 passing ✅
-API Unit Tests:     49 passing ✅  
-Integration Tests:   3 passing ✅
-─────────────────────────────────
-Total:              83 passing
-```
-
-### What the Tests Confirm
-
-| Test Suite | What It Validates |
-|------------|-------------------|
-| **Contract Tests** | Minting, fees, ownership, tokenURI, withdrawals |
-| **Venice API Tests** | Image generation, error handling, rate limits |
-| **OpenSea API Tests** | Fetching bids, listings, collection data |
-| **Integration Tests** | Full flow: Generate image → Compress → Mint onchain |
-
-### Integration Test Results (Real AI Images)
-
-```
-🎨 Generate 256x256 image with Venice AI    ✅
-🗜️  Compress to 128x128 JPEG (97% reduction) ✅
-🪙 Mint compressed image onchain            ✅
-   Gas used: ~2.5M (well under 30M limit)
-   Cost on Base L2: ~$0.02
-```
+| Priority | Task | Description |
+|----------|------|-------------|
+| 🎨 | Branding | Replace placeholder images (icon, splash, hero) |
+| 💰 | Enable fees | Turn on generate/mint fees in contract |
+| 📈 | Price curve | Increase mint price over time |
+| 🔗 | Deep bids | Set up OpenSea bids near mint price |
+| 📊 | User stats | Track mints per user, streaks, etc. |
+| 🎲 | Random mode | AI-generated prompts (V1) |
 
 ---
 
-## Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- Git
-- A wallet (MetaMask, Coinbase Wallet, etc.)
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/MacStrelioff/infinite-frontier.git
-cd infinite-frontier
-
-# Install dependencies
-npm install
-
-# Copy environment template
-cp .env.example .env
-```
-
-### Run Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run specific test suites
-npm run test:contracts      # Smart contract tests
-npm run test:api            # API unit tests (mocked)
-npm run test:integration    # End-to-end with real Venice API
-```
-
-### Run Locally
-
-```bash
-# Start development server
-npm run dev
-
-# Open http://localhost:3000
-```
-
----
-
-## Environment Variables
-
-### Required API Keys (You Must Obtain)
-
-#### 1. `VENICE_AI_API_KEY` ⚠️ Required
-
-**Purpose:** AI image generation
-
-**How to get:**
-1. Go to [venice.ai](https://venice.ai)
-2. Sign up for an account
-3. Navigate to API settings in your dashboard
-4. Generate/copy your API key
-
-```env
-VENICE_AI_API_KEY=your_key_here
-```
-
----
-
-#### 2. `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` ⚠️ Required for mobile wallets
-
-**Purpose:** Mobile wallet QR code connections
-
-**How to get:**
-1. Go to [cloud.walletconnect.com](https://cloud.walletconnect.com)
-2. Sign up (free)
-3. Create a new project
-4. Copy the Project ID
-
-```env
-NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_project_id
-```
-
-**Note:** Browser extension wallets work without this, but mobile users need it.
-
----
-
-#### 3. `PRIVATE_KEY` ⚠️ Required for deployment
-
-**Purpose:** Deploying contracts and transactions
-
-**How to get:**
-1. Export from your wallet (MetaMask: Settings → Security → Show Private Key)
-2. Use a dedicated deployment wallet
-3. **⚠️ NEVER commit this to git!**
-
-```env
-PRIVATE_KEY=0xYourPrivateKeyHere
-```
-
----
-
-#### 4. `BASESCAN_API_KEY` (Optional but recommended)
-
-**Purpose:** Contract verification on Basescan
-
-**How to get:**
-1. Go to [basescan.org](https://basescan.org)
-2. Sign up (free)
-3. Go to API Keys in account settings
-4. Create a new API key
-
-```env
-BASESCAN_API_KEY=your_key_here
-```
-
----
-
-#### 5. `OPENSEA_API_KEY` (Optional)
-
-**Purpose:** Fetching bids/listings from OpenSea
-
-**How to get:**
-1. Log in to [opensea.io](https://opensea.io)
-2. Go to Settings → Developer
-3. Verify email, request API access
-4. Create API key once approved
-
-```env
-OPENSEA_API_KEY=your_key_here
-```
-
-**Note:** Basic functionality works without this; only needed for bid display.
-
----
-
-### Auto-Configured Variables
-
-These are set after you deploy:
-
-```env
-# Set after deploying contract
-NEXT_PUBLIC_CONTRACT_ADDRESS=0xYourDeployedContract
-
-# Default RPC endpoints (can customize)
-BASE_RPC_URL=https://mainnet.base.org
-BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
-```
-
----
-
-## Deployment Guide
-
-### Step 1: Deploy Contract to Base Sepolia (Testnet)
-
-First, get testnet ETH:
-- [Alchemy Faucet](https://www.alchemy.com/faucets/base-sepolia)
-- [Coinbase Faucet](https://www.coinbase.com/faucets/base-ethereum-sepolia-faucet)
-
-Then deploy:
-
-```bash
-# Make sure .env has PRIVATE_KEY set
-npx hardhat run scripts/deploy.ts --network baseSepolia
-```
-
-Copy the deployed address to `.env`:
-```env
-NEXT_PUBLIC_CONTRACT_ADDRESS=0xYourContractAddress
-```
-
-### Step 2: Test Locally
-
-```bash
-npm run dev
-# Open http://localhost:3000
-# Connect wallet (switch to Base Sepolia)
-# Test generate + mint flow
-```
-
-### Step 3: Deploy Website to Vercel
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-
-# Set environment variables in Vercel dashboard:
-# - VENICE_AI_API_KEY
-# - NEXT_PUBLIC_CONTRACT_ADDRESS  
-# - NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID
-```
-
-Your app will be live at: `https://your-app.vercel.app`
-
-### Step 4: Generate Farcaster Manifest (via Base.dev)
-
-The manifest requires a cryptographic signature. Use Base.dev to generate it:
-
-1. **Go to [base.dev](https://base.dev)**
-
-2. **Sign in** with your Coinbase/Base account
-
-3. **Navigate to Preview → Account Association**
-
-4. **Enter your domain:**
-   ```
-   your-app.vercel.app
-   ```
-
-5. **Click to verify and sign** - this generates the `accountAssociation` signature
-
-6. **Copy the generated manifest**
-
-7. **Create the manifest file:**
-   ```bash
-   mkdir -p public/.well-known
-   ```
-
-8. **Save to `public/.well-known/farcaster.json`:**
-   ```json
-   {
-     "accountAssociation": {
-       "header": "eyJ...",
-       "payload": "eyJ...",
-       "signature": "0x..."
-     },
-     "frame": {
-       "version": "1",
-       "name": "Infinite Frontier",
-       "iconUrl": "https://your-app.vercel.app/icon.png",
-       "homeUrl": "https://your-app.vercel.app",
-       "imageUrl": "https://your-app.vercel.app/og-image.png",
-       "buttonTitle": "Create AI Art",
-       "splashImageUrl": "https://your-app.vercel.app/splash.png",
-       "splashBackgroundColor": "#0a0a0f"
-     }
-   }
-   ```
-
-9. **Redeploy to Vercel:**
-   ```bash
-   vercel --prod
-   ```
-
-10. **Verify:** Visit `https://your-app.vercel.app/.well-known/farcaster.json`
-
-### Step 5: Deploy Contract to Base Mainnet
-
-Once tested on testnet:
-
-```bash
-# Make sure you have ETH on Base mainnet
-npx hardhat run scripts/deploy.ts --network base
-
-# Verify contract (optional but recommended)
-npx hardhat verify --network base <CONTRACT_ADDRESS>
-```
-
-Update `.env` and Vercel with the mainnet contract address.
-
----
-
-## Technical Details
+## How It Works
 
 ### Image Pipeline
 
@@ -345,23 +65,109 @@ Stored fully onchain in NFT contract
 
 | Image Size | Gas Used | Cost |
 |------------|----------|------|
-| 64x64 JPEG | ~1.2M | ~$0.003 |
 | 128x128 JPEG | ~2.5M | ~$0.02 |
-| 256x256 PNG | ~30M+ | ❌ Exceeds Base Gas Limit |
 
-Current setting: **128x128 JPEG** (good quality, affordable gas)
+All metadata stored onchain - no IPFS needed!
 
-### Smart Contract
+---
 
-The `InfiniteFrontier.sol` contract stores:
-- Full image data (base64 JPEG)
-- Prompt text
-- Minter address
-- AI model used
-- Generation version
-- Mint timestamp
+## Local Development
 
-All metadata is returned via `tokenURI()` as a data URI - fully onchain, no IPFS needed.
+### Prerequisites
+
+- Node.js 18+
+- Git
+
+### Installation
+
+```bash
+git clone https://github.com/MacStrelioff/infinite-frontier.git
+cd infinite-frontier
+npm install
+cp .env.example .env
+```
+
+### Run Locally
+
+```bash
+npm run dev
+# Open http://localhost:3000
+```
+
+### Run Tests
+
+```bash
+npm test                    # All tests
+npm run test:contracts      # Smart contract tests
+npm run test:api            # API unit tests
+npm run test:integration    # E2E with real Venice API
+```
+
+---
+
+## Environment Variables
+
+### Required
+
+```env
+# AI image generation (get from venice.ai)
+VENICE_AI_API_KEY=your_key
+
+# Deployed contract address
+NEXT_PUBLIC_CONTRACT_ADDRESS=0xbe253c50AD7491E072AbC5Caf9b0dA13755dbD04
+
+# Mobile wallet connections (get from cloud.walletconnect.com)
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_project_id
+```
+
+### For Deployment
+
+```env
+# Contract deployment (export from your wallet)
+PRIVATE_KEY=0xYourPrivateKey
+
+# Contract verification (get from basescan.org)
+BASESCAN_API_KEY=your_key
+```
+
+### Optional
+
+```env
+# OpenSea bid display (get from opensea.io developer settings)
+OPENSEA_API_KEY=your_key
+```
+
+---
+
+## Deployment
+
+### Deploy Contract
+
+```bash
+# Testnet
+npx hardhat run scripts/deploy.ts --network baseSepolia
+
+# Mainnet
+npx hardhat run scripts/deploy.ts --network base
+
+# Verify
+npx hardhat verify --network base <CONTRACT_ADDRESS>
+```
+
+### Deploy Website
+
+```bash
+vercel
+# Set environment variables in Vercel dashboard
+```
+
+### Generate Farcaster Manifest
+
+1. Deploy website to Vercel first
+2. Go to [base.dev](https://base.dev)
+3. Enter your domain and sign to verify ownership
+4. Copy the signed manifest to `public/.well-known/farcaster.json`
+5. Redeploy to Vercel
 
 ---
 
@@ -371,72 +177,42 @@ All metadata is returned via `tokenURI()` as a data URI - fully onchain, no IPFS
 infinite-frontier/
 ├── src/
 │   ├── app/                 # Next.js pages & API routes
-│   │   ├── page.tsx         # Main UI
-│   │   └── api/
-│   │       └── generate/    # Venice AI + compression
 │   ├── components/          # React components
 │   ├── contracts/           # Solidity contracts
-│   ├── hooks/               # React hooks
+│   ├── hooks/               # React hooks (useFrameContext)
 │   └── lib/                 # Utilities (venice.ts, opensea.ts)
-├── tests/
-│   ├── contracts/           # Hardhat tests
-│   ├── api/                 # Vitest API tests
-│   └── integration/         # E2E tests
+├── tests/                   # Test suites
 ├── scripts/                 # Deployment scripts
-└── public/                  # Static assets
+└── public/                  # Static assets + manifest
 ```
 
 ---
 
-## Features by Version
+## Features Roadmap
 
-### V0 (MVP) - Current
+### V0 (MVP) ✅ Complete
 - [x] User-input text prompts
 - [x] AI image generation (Venice AI)
 - [x] 128x128 JPEG compression for onchain storage
 - [x] NFT minting with full onchain metadata
-- [x] OpenSea integration
-- [x] Generate/mint fee system
-- [ ] Deploy to mainnet
+- [x] Farcaster miniapp integration
+- [x] OpenSea auto-detection
 
 ### V1 (Enhanced)
+- [ ] Generate/mint fee system enabled
 - [ ] User stats tracking
 - [ ] Random image generation mode
 - [ ] AI-generated prompts
 
 ### V2 (Game Mechanics)
-- [ ] NFT categories
+- [ ] NFT categories (characters, items, etc.)
 - [ ] Character attributes
 - [ ] Equipment mechanics
 
 ### V3 (Advanced)
-- [ ] Burn-to-mint
-- [ ] Enhanced marketplace
-- [ ] Analytics
-
----
-
-## Troubleshooting
-
-### Tests Fail
-- Run `npm install` to ensure dependencies are installed
-- Check that `VENICE_AI_API_KEY` is set for integration tests
-- Contract tests work without any API keys
-
-### App Won't Start
-- Verify all `NEXT_PUBLIC_*` variables are set
-- Check port 3000 is available
-- Run `npm run build` to check for errors
-
-### Wallet Connection Issues
-- Ensure you're on the correct network (Base or Base Sepolia)
-- Check `NEXT_PUBLIC_CONTRACT_ADDRESS` is set
-- Try refreshing or reconnecting wallet
-
-### Minting Fails
-- Check wallet has enough ETH for gas + mint fee
-- Verify contract is deployed to the network you're connected to
-- Check browser console for detailed errors
+- [ ] Burn-to-mint option
+- [ ] Enhanced marketplace features
+- [ ] Analytics dashboard
 
 ---
 
@@ -444,16 +220,11 @@ infinite-frontier/
 
 - [Venice AI API Docs](https://docs.venice.ai/api-reference/api-spec)
 - [Base Miniapp Docs](https://docs.base.org/mini-apps/quickstart/create-new-miniapp)
-- [OpenSea API Docs](https://docs.opensea.io/reference/api-overview)
 - [Farcaster Frame Spec](https://docs.farcaster.xyz/reference/frames/spec)
-- [Hardhat Docs](https://hardhat.org/docs)
+- [OpenSea API Docs](https://docs.opensea.io/reference/api-overview)
 
 ---
 
 ## License
 
 MIT
-
-## Contributing
-
-Contributions welcome! Please open an issue first to discuss changes.

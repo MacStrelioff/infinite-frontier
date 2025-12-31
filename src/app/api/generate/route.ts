@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateImage, validatePrompt, DEFAULT_IMAGE_MODEL, VeniceAPIError } from '@/lib/venice';
+import { generateImage, compressImage, validatePrompt, VENICE_MIN_SIZE, ONCHAIN_IMAGE_SIZE, VeniceAPIError } from '@/lib/venice';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,12 +26,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate image using Venice AI
+    // Generate image using Venice AI at minimum size (256x256)
     const result = await generateImage(
       {
         prompt,
-        width: 256,  // Minimum size supported by Venice AI
-        height: 256,
+        width: VENICE_MIN_SIZE,
+        height: VENICE_MIN_SIZE,
         steps: 20,
         cfg_scale: 7,
       },
@@ -45,11 +45,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Compress image to 128x128 JPEG for efficient onchain storage
+    const compressed = await compressImage(result.images[0].base64, {
+      width: ONCHAIN_IMAGE_SIZE,
+      height: ONCHAIN_IMAGE_SIZE,
+      format: 'jpeg',
+      quality: 70,
+    });
+
     return NextResponse.json({
-      imageBase64: result.images[0].base64,
+      imageBase64: compressed.base64,
       prompt,
       model: result.model,
       seed: result.seed,
+      compressed: {
+        format: compressed.format,
+        sizeBytes: compressed.sizeBytes,
+      },
     });
   } catch (error) {
     console.error('Image generation error:', error);

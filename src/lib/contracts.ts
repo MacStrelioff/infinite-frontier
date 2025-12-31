@@ -6,15 +6,15 @@
 export const CONTRACT_ADDRESSES = {
   // Base Mainnet
   8453: {
-    infiniteFrontier: '0x0000000000000000000000000000000000000000' as `0x${string}`, // Deploy and update
+    infiniteFrontier: '0xbe253c50AD7491E072AbC5Caf9b0dA13755dbD04' as `0x${string}`,
   },
   // Base Sepolia (testnet)
   84532: {
-    infiniteFrontier: '0x0000000000000000000000000000000000000000' as `0x${string}`, // Deploy and update
+    infiniteFrontier: '0x2d3d42AC1f579F156816405460b7fEf6da925B1d' as `0x${string}`,
   },
   // Local hardhat
   31337: {
-    infiniteFrontier: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as `0x${string}`, // Default hardhat deployment address
+    infiniteFrontier: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as `0x${string}`,
   },
 } as const;
 

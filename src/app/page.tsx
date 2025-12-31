@@ -26,6 +26,7 @@ export default function Home() {
   const [generatedImage, setGeneratedImage] = useState<GeneratedImageData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mintedTokenId, setMintedTokenId] = useState<number | null>(null);
+  const [mintTxHash, setMintTxHash] = useState<string | null>(null);
 
   const { 
     totalSupply, 
@@ -64,8 +65,9 @@ export default function Home() {
     }
   }, []);
 
-  const handleMintSuccess = useCallback((tokenId: number) => {
+  const handleMintSuccess = useCallback((tokenId: number, txHash?: string) => {
     setMintedTokenId(tokenId);
+    setMintTxHash(txHash || null);
     setAppState('minted');
     refetchSupply();
   }, [refetchSupply]);
@@ -73,6 +75,7 @@ export default function Home() {
   const handleReset = useCallback(() => {
     setGeneratedImage(null);
     setMintedTokenId(null);
+    setMintTxHash(null);
     setError(null);
     setAppState('idle');
   }, []);
@@ -162,20 +165,50 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-2xl font-bold mb-2">NFT Minted!</h3>
-              <p className="text-white/60 mb-6">
+              <p className="text-white/60 mb-4">
                 Your NFT #{mintedTokenId} has been minted successfully.
               </p>
-              <div className="flex gap-4 justify-center">
+              {mintTxHash && (
+                <div className="mb-6">
+                  <p className="text-white/50 text-sm mb-1">Transaction Hash:</p>
+                  <a
+                    href={chainId === 84532 
+                      ? `https://sepolia.basescan.org/tx/${mintTxHash}`
+                      : `https://basescan.org/tx/${mintTxHash}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-400 hover:text-purple-300 text-sm font-mono break-all"
+                  >
+                    {mintTxHash}
+                  </a>
+                </div>
+              )}
+              <div className="flex gap-4 justify-center flex-wrap">
                 <button onClick={handleReset} className="btn-primary">
                   Create Another
                 </button>
                 <a
-                  href={`https://opensea.io/assets/base/${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}/${mintedTokenId}`}
+                  href={chainId === 84532 
+                    ? `https://testnets.opensea.io/assets/base-sepolia/${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}/${mintedTokenId}`
+                    : `https://opensea.io/assets/base/${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}/${mintedTokenId}`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-secondary"
                 >
                   View on OpenSea
+                </a>
+                <a
+                  href={chainId === 84532 
+                    ? `https://sepolia.basescan.org/token/${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}?a=${mintedTokenId}`
+                    : `https://basescan.org/token/${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}?a=${mintedTokenId}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary"
+                >
+                  View on Basescan
                 </a>
               </div>
             </div>

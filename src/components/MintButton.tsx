@@ -11,7 +11,7 @@ interface MintButtonProps {
   aiModel: string;
   mintFee: bigint;
   chainId: SupportedChainId;
-  onSuccess: (tokenId: number) => void;
+  onSuccess: (tokenId: number, txHash?: string) => void;
   onMinting: () => void;
 }
 
@@ -80,16 +80,16 @@ export function MintButton({
           
           if (decoded.eventName === 'NFTMinted' && decoded.args) {
             const tokenId = Number((decoded.args as { tokenId: bigint }).tokenId);
-            onSuccess(tokenId);
+            onSuccess(tokenId, txHash);
           }
         } catch (err) {
           console.error('Failed to decode mint event:', err);
           // Fallback: still indicate success
-          onSuccess(0);
+          onSuccess(0, txHash);
         }
       } else {
         // Fallback if we can't find the event
-        onSuccess(0);
+        onSuccess(0, txHash);
       }
       
       setIsMinting(false);

@@ -347,7 +347,7 @@ Stored fully onchain in NFT contract
 |------------|----------|------|
 | 64x64 JPEG | ~1.2M | ~$0.003 |
 | 128x128 JPEG | ~2.5M | ~$0.02 |
-| 256x256 PNG | ~30M+ | ❌ Too expensive |
+| 256x256 PNG | ~30M+ | ❌ Exceeds Base Gas Limit |
 
 Current setting: **128x128 JPEG** (good quality, affordable gas)
 

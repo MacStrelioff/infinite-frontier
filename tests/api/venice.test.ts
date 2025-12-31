@@ -7,6 +7,7 @@ import {
   getAvailableModels,
   DEFAULT_IMAGE_MODEL,
   ONCHAIN_IMAGE_SIZE,
+  VENICE_MIN_SIZE,
 } from '../../src/lib/venice';
 
 // Mock fetch globally
@@ -97,7 +98,7 @@ describe('Venice AI API', () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${mockApiKey}`,
           },
-          body: expect.stringContaining(`"width":${ONCHAIN_IMAGE_SIZE}`),
+          body: expect.stringContaining(`"size":"${VENICE_MIN_SIZE}x${VENICE_MIN_SIZE}"`),
         })
       );
     });
@@ -120,7 +121,7 @@ describe('Venice AI API', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          body: expect.stringContaining('"width":512'),
+          body: expect.stringContaining('"size":"512x512"'),
         })
       );
     });
@@ -163,7 +164,7 @@ describe('Venice AI API', () => {
         .toThrow('Network error');
     });
 
-    it('should include negative prompt by default', async () => {
+    it('should not include negative prompt by default (OpenAI format)', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ data: [{ b64_json: 'test' }] }),
@@ -172,10 +173,11 @@ describe('Venice AI API', () => {
       await generateImage({ prompt: mockPrompt }, mockApiKey);
 
       const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
-      expect(callBody.negative_prompt).toBe('blurry, low quality, distorted');
+      // OpenAI-compatible format doesn't include negative_prompt by default
+      expect(callBody.negative_prompt).toBeUndefined();
     });
 
-    it('should allow custom negative prompt', async () => {
+    it('should include custom negative prompt when provided', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ data: [{ b64_json: 'test' }] }),
@@ -299,7 +301,10 @@ describe('Venice AI API', () => {
     });
 
     it('should have correct onchain image size', () => {
-      expect(ONCHAIN_IMAGE_SIZE).toBe(256);
+      // ONCHAIN_IMAGE_SIZE is the target size for compressed images (128x128)
+      expect(ONCHAIN_IMAGE_SIZE).toBe(128);
+      // VENICE_MIN_SIZE is the minimum the Venice API accepts (256x256)
+      expect(VENICE_MIN_SIZE).toBe(256);
     });
   });
 });

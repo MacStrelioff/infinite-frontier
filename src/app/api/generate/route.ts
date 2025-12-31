@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const result = await generateImage(
       {
         prompt,
-        width: 256,  // Optimized for onchain storage
+        width: 256,  // Minimum size supported by Venice AI
         height: 256,
         steps: 20,
         cfg_scale: 7,

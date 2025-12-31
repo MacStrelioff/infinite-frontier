@@ -20,7 +20,7 @@ async function generateImage() {
 
   console.log('🎨 Generating image with Venice AI...');
   console.log(`   Prompt: "${prompt}"`);
-  console.log('   Size: 256x256\n');
+  console.log('   Size: 256x256 (minimum size supported by Venice AI)\n');
 
   try {
     const response = await fetch(url, {

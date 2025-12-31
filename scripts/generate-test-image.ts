@@ -31,7 +31,7 @@ async function main() {
   console.log('🎨 Generating image with Venice AI...');
   console.log(`   Model: ${DEFAULT_IMAGE_MODEL}`);
   console.log(`   Prompt: "${prompt}"`);
-  console.log('   Size: 256x256 (optimized for onchain storage)\n');
+  console.log('   Size: 256x256 (minimum size supported by Venice AI)\n');
 
   try {
     const result = await generateImage(

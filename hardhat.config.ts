@@ -18,6 +18,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       chainId: 31337,
+      blockGasLimit: 30000000, // 30M gas limit for large image storage
     },
     base: {
       url: process.env.BASE_RPC_URL || "https://mainnet.base.org",

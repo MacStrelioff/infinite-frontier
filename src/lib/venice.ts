@@ -3,6 +3,8 @@
  * @see https://docs.venice.ai/api-reference/api-spec
  */
 
+import sharp from 'sharp';
+
 export interface VeniceImageGenerationRequest {
   prompt: string;
   model?: string;
@@ -31,11 +33,25 @@ export interface VeniceError {
   };
 }
 
+export interface ImageCompressionOptions {
+  /** Target width (default: 128) */
+  width?: number;
+  /** Target height (default: 128) */
+  height?: number;
+  /** Output format: 'png' | 'jpeg' | 'webp' (default: 'png') */
+  format?: 'png' | 'jpeg' | 'webp';
+  /** Quality for lossy formats (1-100, default: 80) */
+  quality?: number;
+}
+
 // Default model for image generation
 export const DEFAULT_IMAGE_MODEL = 'fluently-xl';
 
-// Image dimensions optimized for onchain storage
-export const ONCHAIN_IMAGE_SIZE = 256; // Balance between quality and gas costs
+// Venice API minimum size (64x64 not supported on OpenAI-compatible endpoint)
+export const VENICE_MIN_SIZE = 256;
+
+// Target size for onchain storage (we resize down after generation)
+export const ONCHAIN_IMAGE_SIZE = 128;
 
 /**
  * Generate an image using Venice AI API
@@ -51,9 +67,10 @@ export async function generateImage(
 
   // Venice API is OpenAI-compatible, so we use OpenAI's format
   // Convert width/height to size string (e.g., "256x256")
+  // Note: Venice minimum is 256x256 - use generateOnchainImage for automatic compression
   const size = request.width && request.height 
     ? `${request.width}x${request.height}`
-    : `${ONCHAIN_IMAGE_SIZE}x${ONCHAIN_IMAGE_SIZE}`;
+    : `${VENICE_MIN_SIZE}x${VENICE_MIN_SIZE}`;
 
   const body: Record<string, any> = {
     model: request.model || DEFAULT_IMAGE_MODEL,
@@ -238,4 +255,112 @@ export async function getAvailableModels(apiKey: string): Promise<string[]> {
     })
     .map((model: any) => model.id || model.name || '')
     .filter((id: string) => id.length > 0);
+}
+
+/**
+ * Compress and resize a base64-encoded image
+ * 
+ * Venice AI minimum size is 256x256. This function allows you to:
+ * 1. Resize to smaller dimensions (e.g., 128x128) for gas optimization
+ * 2. Convert to more efficient formats (JPEG/WebP instead of PNG)
+ * 3. Adjust quality for lossy formats
+ * 
+ * @param base64Image The base64-encoded input image (PNG from Venice)
+ * @param options Compression options
+ * @returns Base64-encoded compressed image
+ * 
+ * @example
+ * // Resize to 128x128 PNG (default)
+ * const small = await compressImage(base64Image);
+ * 
+ * @example
+ * // Convert to 128x128 JPEG at 60% quality (much smaller)
+ * const tiny = await compressImage(base64Image, { format: 'jpeg', quality: 60 });
+ * 
+ * @example
+ * // Convert to 32x32 WebP (smallest)
+ * const smallest = await compressImage(base64Image, { width: 32, height: 32, format: 'webp', quality: 50 });
+ */
+export async function compressImage(
+  base64Image: string,
+  options: ImageCompressionOptions = {}
+): Promise<{ base64: string; format: string; sizeBytes: number }> {
+  const {
+    width = ONCHAIN_IMAGE_SIZE,
+    height = ONCHAIN_IMAGE_SIZE,
+    format = 'png',
+    quality = 80,
+  } = options;
+
+  const inputBuffer = Buffer.from(base64Image, 'base64');
+  
+  let pipeline = sharp(inputBuffer).resize(width, height);
+
+  let outputBuffer: Buffer;
+  
+  switch (format) {
+    case 'jpeg':
+      outputBuffer = await pipeline.jpeg({ quality }).toBuffer();
+      break;
+    case 'webp':
+      outputBuffer = await pipeline.webp({ quality }).toBuffer();
+      break;
+    case 'png':
+    default:
+      outputBuffer = await pipeline.png({ compressionLevel: 9 }).toBuffer();
+      break;
+  }
+
+  return {
+    base64: outputBuffer.toString('base64'),
+    format,
+    sizeBytes: outputBuffer.length,
+  };
+}
+
+/**
+ * Generate an image optimized for onchain storage
+ * 
+ * This is a convenience wrapper that:
+ * 1. Generates a 256x256 image from Venice (minimum supported)
+ * 2. Resizes it to 128x128 (or custom size)
+ * 3. Optionally converts to JPEG/WebP for smaller file size
+ * 
+ * @param request Image generation request
+ * @param apiKey Venice API key
+ * @param compression Compression options (default: 128x128 PNG)
+ * @returns Compressed image response
+ * 
+ * @example
+ * // Generate 128x128 PNG (default)
+ * const result = await generateOnchainImage({ prompt: 'A dragon' }, apiKey);
+ * 
+ * @example
+ * // Generate 128x128 JPEG for smaller gas costs
+ * const result = await generateOnchainImage(
+ *   { prompt: 'A dragon' },
+ *   apiKey,
+ *   { format: 'jpeg', quality: 70 }
+ * );
+ */
+export async function generateOnchainImage(
+  request: VeniceImageGenerationRequest,
+  apiKey: string,
+  compression: ImageCompressionOptions = {}
+): Promise<VeniceImageGenerationResponse & { compressed: { base64: string; format: string; sizeBytes: number } }> {
+  // Generate at Venice minimum size (256x256)
+  const result = await generateImage(
+    { ...request, width: VENICE_MIN_SIZE, height: VENICE_MIN_SIZE },
+    apiKey
+  );
+
+  // Compress the first image
+  const compressed = await compressImage(result.images[0].base64, compression);
+
+  // Replace the original with compressed version
+  return {
+    ...result,
+    images: [{ base64: compressed.base64, url: result.images[0].url }],
+    compressed,
+  };
 }
